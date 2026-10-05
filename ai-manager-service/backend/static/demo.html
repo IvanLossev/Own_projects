@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Manager Demo</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Дента-Плюс</h2>
+                <p>Демо ИИ-администратора</p>
+            </div>
+            <button id="generate-prompt-btn" class="btn btn-secondary">Сгенерировать промпт</button>
+            <button id="new-dialog-btn" class="btn btn-secondary">Новый диалог</button>
+            <button id="show-patients-btn" class="btn btn-secondary">Показать лиды</button>
+            <div id="patients-panel" class="patients-panel hidden"></div>
+        </aside>
+
+        <main class="chat">
+            <header class="chat-header">
+                <div class="chat-header-info">
+                    <h1 id="chat-title">AI-Manager</h1>
+                    <span id="chat-status" class="status">BOT_ACTIVE</span>
+                </div>
+            </header>
+
+            <div id="messages" class="messages"></div>
+
+            <footer class="chat-input">
+                <input type="text" id="message-input" placeholder="Введите сообщение..." autocomplete="off">
+                <button id="send-btn" class="btn btn-primary">Отправить</button>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        const API = '/api';
+        const messagesEl = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        const generatePromptBtn = document.getElementById('generate-prompt-btn');
+        const newDialogBtn = document.getElementById('new-dialog-btn');
+        const viewPatientsBtn = document.getElementById('show-patients-btn');
+        const patientsPanel = document.getElementById('patients-panel');
+        const chatTitle = document.getElementById('chat-title');
+        const chatStatus = document.getElementById('chat-status');
+        let businessId = null;
+
+        let sessionId = localStorage.getItem('session_id');
+        if (!sessionId) {
+            sessionId = crypto.randomUUID();
+            localStorage.setItem('session_id', sessionId);
+        }
+
+        async function loadBusinesses() {
+            const res = await fetch(`${API}/businesses`);
+            const businesses = await res.json();
+            if (businesses.length > 0) {
+                businessId = businesses[0].id;
+                chatTitle.textContent = businesses[0].name;
+            }
+        }
+
+        function addMessage(text, role) {
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            div.textContent = text;
+            messagesEl.appendChild(div);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function startNewDialog() {
+            sessionId = crypto.randomUUID();
+            localStorage.setItem('session_id', sessionId);
+            messagesEl.innerHTML = '';
+            chatStatus.textContent = 'BOT_ACTIVE';
+            messageInput.focus();
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            if (!businessId) return;
+
+            addMessage(message, 'user');
+            messageInput.value = '';
+
+            try {
+                const res = await fetch(`${API}/chat/demo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        business_id: businessId,
+                        message: message,
+                        session_id: sessionId
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.detail || data.response || 'Ошибка сервера');
+                }
+                addMessage(data.response || 'Бот не вернул ответ', 'bot');
+                chatStatus.textContent = data.status;
+            } catch (err) {
+                addMessage(err.message || 'Ошибка соединения с сервером', 'bot');
+                chatStatus.textContent = 'BOT_ERROR';
+            }
+        }
+
+        async function generatePrompt() {
+            if (!businessId) return;
+            const res = await fetch(`${API}/businesses/${businessId}/generate-prompt`, {
+                method: 'POST'
+            });
+            if (res.ok) {
+                alert('Промпт сгенерирован');
+            } else {
+                alert('Ошибка генерации промпта');
+            }
+        }
+
+        async function viewPatients() {
+            if (!businessId) return;
+            const res = await fetch(`${API}/businesses/${businessId}/patients`);
+            const patients = await res.json();
+            patientsPanel.innerHTML = '';
+            if (patients.length === 0) {
+                patientsPanel.innerHTML = '<p>Лидов пока нет</p>';
+            } else {
+                patients.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = 'patient-card';
+                    div.innerHTML = `<strong>${p.name}</strong><br>${p.phone}<br><em>${p.complaint}</em>`;
+                    patientsPanel.appendChild(div);
+                });
+            }
+            patientsPanel.classList.toggle('hidden');
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+        generatePromptBtn.addEventListener('click', generatePrompt);
+        newDialogBtn.addEventListener('click', startNewDialog);
+        viewPatientsBtn.addEventListener('click', viewPatients);
+
+        loadBusinesses();
+    </script>
+</body>
+</html>

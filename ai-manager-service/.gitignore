@@ -1,0 +1,79 @@
+# === Python ===
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+*.manifest
+*.spec
+sdist/
+wheels/
+.python-version
+
+# === Виртуальные окружения ===
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# === Тесты и покрытие ===
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# === Базы данных (в т.ч. SQLite) ===
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# === Переменные окружения и секреты ===
+.env
+.env.*
+!.env.example
+*.local
+
+# === Логи ===
+*.log
+logs/
+
+# === Кэш и артефакты ===
+.cache/
+.ipynb_checkpoints/
+spyproject/
+*.bak
+
+# === Инструменты ===
+.idea/
+.vscode/
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# === Jupyter ===
+.ipynb_checkpoints/
+*.ipynb
+
+# === Прочее ===
+celerybeat-schedule
+celerybeat.pid
+*.pid
